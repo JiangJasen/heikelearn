@@ -5,7 +5,7 @@ import CodeEditor from './components/CodeEditor';
 import PreviewWindow from './components/PreviewWindow';
 import MentorChat from './components/MentorChat';
 import { generateCodeReview } from './services/geminiService';
-import { Terminal, Code, Play, CheckCircle, ChevronRight, Award, Lightbulb, HelpCircle, X } from 'lucide-react';
+import { Terminal, Code, Play, CheckCircle, ChevronRight, Award, Lightbulb, HelpCircle, X, BookOpen } from 'lucide-react';
 
 const LEVEL_CONFIGS: Record<GameStage, LevelConfig> = {
   [GameStage.INTRO]: {
@@ -32,11 +32,11 @@ const LEVEL_CONFIGS: Record<GameStage, LevelConfig> = {
     successMessage: "骨架修复成功！系统识别到了内容结构。"
   },
   [GameStage.HTML_BASICS]: {
-     // Re-using enum for simplicity
+     // Placeholder to satisfy type check if needed, though strictly unused in STAGE_ORDER
      id: GameStage.HTML_BASICS,
-     title: "第一章：骨架 (HTML)",
-     description: "同上...",
-     mission: "同上...",
+     title: "",
+     description: "",
+     mission: "",
      initialCode: "", 
      solutionHint: "",
      explanation: "",
@@ -225,10 +225,14 @@ const App: React.FC = () => {
                  </h2>
                  <button 
                     onClick={() => setShowExplanation(!showExplanation)}
-                    className="text-xs text-accent-cyan hover:text-cyan-200 flex items-center gap-1 transition-colors"
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs font-bold transition-all border ${
+                        showExplanation 
+                        ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/50" 
+                        : "bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700 hover:text-gray-200"
+                    }`}
                     title="查看任务解析与答案"
                  >
-                    <Lightbulb size={16} className={showExplanation ? "fill-accent-cyan" : ""} /> 
+                    <Lightbulb size={14} className={showExplanation ? "fill-yellow-500 text-yellow-500" : ""} />
                     {showExplanation ? "收起解析" : "任务解析"}
                  </button>
              </div>
@@ -246,19 +250,27 @@ const App: React.FC = () => {
 
              {/* Explanation Panel (Conditional) */}
              {showExplanation && (
-                 <div className="mt-4 bg-gray-800 border border-gray-600 rounded-lg p-4 animate-in fade-in slide-in-from-top-2 shadow-2xl">
-                     <div className="flex justify-between items-center mb-2">
-                         <h4 className="font-bold text-white text-sm flex items-center gap-2">
-                             <HelpCircle size={14} className="text-yellow-400" /> 
-                             解题思路
-                         </h4>
-                     </div>
-                     <div className="text-gray-300 text-sm whitespace-pre-wrap leading-relaxed mb-4 pl-2 border-l-2 border-gray-600">
-                         {config.explanation}
-                     </div>
-                     <div className="bg-black/40 p-3 rounded border border-gray-700">
-                         <p className="text-xs text-gray-500 mb-1">参考代码：</p>
-                         <code className="text-green-400 font-mono text-xs whitespace-pre">{config.solutionHint}</code>
+                 <div className="mt-4 bg-gray-800/80 border border-yellow-500/30 rounded-lg p-4 animate-in fade-in slide-in-from-top-2 relative overflow-hidden shadow-2xl">
+                     <div className="absolute top-0 left-0 w-1 h-full bg-yellow-500/50"></div>
+                     <h4 className="font-bold text-yellow-500 text-sm flex items-center gap-2 mb-3">
+                         <BookOpen size={16} />
+                         任务拆解与参考答案
+                     </h4>
+                     
+                     <div className="space-y-4">
+                        <div>
+                            <h5 className="text-xs text-gray-500 uppercase font-bold mb-1">详细步骤 Analysis</h5>
+                            <div className="text-gray-300 text-sm whitespace-pre-wrap leading-relaxed">
+                                {config.explanation}
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h5 className="text-xs text-gray-500 uppercase font-bold mb-1">参考代码 Solution</h5>
+                            <div className="bg-black p-3 rounded border border-gray-700 font-mono text-xs text-green-400 overflow-x-auto">
+                                {config.solutionHint}
+                            </div>
+                        </div>
                      </div>
                  </div>
              )}
