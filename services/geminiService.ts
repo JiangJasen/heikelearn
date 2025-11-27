@@ -1,7 +1,27 @@
 import { GoogleGenAI } from "@google/genai";
 import { ChatMessage } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// 安全获取 API Key，兼容 Vite (import.meta.env) 和 Node 环境
+// 注意：在 Vercel 部署时，请在环境变量中设置 VITE_API_KEY
+const getApiKey = (): string => {
+  try {
+    // @ts-ignore: Vite injects import.meta.env
+    if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_KEY) {
+      // @ts-ignore
+      return import.meta.env.VITE_API_KEY;
+    }
+  } catch (e) {}
+
+  try {
+    if (typeof process !== 'undefined' && process.env?.API_KEY) {
+      return process.env.API_KEY;
+    }
+  } catch (e) {}
+  
+  return "";
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 const modelId = "gemini-2.5-flash";
 
 export const getMentorResponse = async (
@@ -10,6 +30,11 @@ export const getMentorResponse = async (
   stage: string
 ): Promise<string> => {
   try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+        return "错误：未检测到 API Key。请在 Vercel 环境变量中设置 VITE_API_KEY。";
+    }
+
     const systemPrompt = `
       你是一款名为 "H5 骇客学院" 游戏中的 AI 导师（代号：Oracle）。
       用户的目标是学习 HTML5, Tailwind CSS 和 React 基础。
@@ -47,12 +72,15 @@ export const getMentorResponse = async (
     return response.text || "系统连接不稳定，请重试...";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "与 AI 导师的连接中断。请检查你的网络或 API Key。";
+    return "与 AI 导师的连接中断。请检查 API Key 配置。";
   }
 };
 
 export const generateCodeReview = async (code: string, mission: string): Promise<string> => {
     try {
+        const apiKey = getApiKey();
+        if (!apiKey) return "API Key 未配置。";
+
         const response = await ai.models.generateContent({
             model: modelId,
             contents: `
