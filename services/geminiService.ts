@@ -1,8 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 import { ChatMessage } from '../types';
 
-// 安全获取 API Key，兼容 Vite (import.meta.env) 和 Node 环境
-// 注意：在 Vercel 部署时，请在环境变量中设置 VITE_API_KEY
+// 获取 API Key (仅支持 Vite 环境变量)
+// 在 Vercel 部署时，请在 Environment Variables 中设置 VITE_API_KEY
 const getApiKey = (): string => {
   try {
     // @ts-ignore: Vite injects import.meta.env
@@ -10,20 +10,16 @@ const getApiKey = (): string => {
       // @ts-ignore
       return import.meta.env.VITE_API_KEY;
     }
-  } catch (e) {}
-
-  try {
-    if (typeof process !== 'undefined' && process.env?.API_KEY) {
-      return process.env.API_KEY;
-    }
-  } catch (e) {}
+  } catch (e) {
+    console.warn("Failed to read environment variable");
+  }
   
   return "";
 };
 
 const modelId = "gemini-2.5-flash";
 
-// 使用单例模式延迟初始化，防止在模块加载时因缺少 Key 而崩溃
+// 使用单例模式延迟初始化
 let aiClient: GoogleGenAI | null = null;
 
 const getAiClient = (): GoogleGenAI | null => {
@@ -31,7 +27,7 @@ const getAiClient = (): GoogleGenAI | null => {
 
     const apiKey = getApiKey();
     if (!apiKey) {
-        console.warn("API Key not found.");
+        console.warn("API Key not found. Please set VITE_API_KEY in your environment.");
         return null;
     }
 
@@ -52,7 +48,7 @@ export const getMentorResponse = async (
   try {
     const ai = getAiClient();
     if (!ai) {
-        return "系统错误：未检测到 API Key。请在 Vercel 项目设置中配置 VITE_API_KEY 环境变量。";
+        return "系统提示：API Key 未配置。请在 Vercel 后台设置 VITE_API_KEY 环境变量。";
     }
 
     const systemPrompt = `
@@ -92,14 +88,14 @@ export const getMentorResponse = async (
     return response.text || "系统连接不稳定，请重试...";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "与 AI 导师的连接中断。请检查网络或 API Key 配置。";
+    return "与 AI 导师的连接中断。请检查网络配置。";
   }
 };
 
 export const generateCodeReview = async (code: string, mission: string): Promise<string> => {
     try {
         const ai = getAiClient();
-        if (!ai) return "API Key 未配置。";
+        if (!ai) return "";
 
         const response = await ai.models.generateContent({
             model: modelId,
