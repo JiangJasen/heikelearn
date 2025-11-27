@@ -21,8 +21,28 @@ const getApiKey = (): string => {
   return "";
 };
 
-const ai = new GoogleGenAI({ apiKey: getApiKey() });
 const modelId = "gemini-2.5-flash";
+
+// 使用单例模式延迟初始化，防止在模块加载时因缺少 Key 而崩溃
+let aiClient: GoogleGenAI | null = null;
+
+const getAiClient = (): GoogleGenAI | null => {
+    if (aiClient) return aiClient;
+
+    const apiKey = getApiKey();
+    if (!apiKey) {
+        console.warn("API Key not found.");
+        return null;
+    }
+
+    try {
+        aiClient = new GoogleGenAI({ apiKey });
+        return aiClient;
+    } catch (error) {
+        console.error("Failed to initialize Gemini client:", error);
+        return null;
+    }
+};
 
 export const getMentorResponse = async (
   history: ChatMessage[], 
@@ -30,9 +50,9 @@ export const getMentorResponse = async (
   stage: string
 ): Promise<string> => {
   try {
-    const apiKey = getApiKey();
-    if (!apiKey) {
-        return "错误：未检测到 API Key。请在 Vercel 环境变量中设置 VITE_API_KEY。";
+    const ai = getAiClient();
+    if (!ai) {
+        return "系统错误：未检测到 API Key。请在 Vercel 项目设置中配置 VITE_API_KEY 环境变量。";
     }
 
     const systemPrompt = `
@@ -57,7 +77,7 @@ export const getMentorResponse = async (
     const response = await ai.models.generateContent({
       model: modelId,
       contents: [
-        { role: 'user', parts: [{ text: systemPrompt }] }, // Pre-seed context as user prompt for stateless feel or use proper history
+        { role: 'user', parts: [{ text: systemPrompt }] },
         ...history.map(msg => ({
           role: msg.role === 'model' ? 'model' : 'user',
           parts: [{ text: msg.content }]
@@ -72,14 +92,14 @@ export const getMentorResponse = async (
     return response.text || "系统连接不稳定，请重试...";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "与 AI 导师的连接中断。请检查 API Key 配置。";
+    return "与 AI 导师的连接中断。请检查网络或 API Key 配置。";
   }
 };
 
 export const generateCodeReview = async (code: string, mission: string): Promise<string> => {
     try {
-        const apiKey = getApiKey();
-        if (!apiKey) return "API Key 未配置。";
+        const ai = getAiClient();
+        if (!ai) return "API Key 未配置。";
 
         const response = await ai.models.generateContent({
             model: modelId,
@@ -92,6 +112,7 @@ export const generateCodeReview = async (code: string, mission: string): Promise
         });
         return response.text || "代码分析完成。";
     } catch (e) {
+        console.error(e);
         return "代码分析模块离线。";
     }
 }
