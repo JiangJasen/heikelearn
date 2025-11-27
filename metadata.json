@@ -1,0 +1,5 @@
+{
+  "name": "H5 骇客代码学院",
+  "description": "一个互动式 H5 开发闯关游戏。作为一名新手黑客，你需要在 AI 导师的帮助下，通过编写 HTML、CSS 和 React 代码来修复被破坏的网络节点，从而掌握前端开发核心技能。",
+  "requestFramePermissions": []
+}
